@@ -173,14 +173,36 @@ class SpriteProcessor {
 
     this.drawSpriteImage(sprite, newContext)
 
-    const color = sprite.color.map(c => Math.round(c*255)).join(", ");
+    // Start of changes
+    const spriteData = newContext.getImageData(0, 0, newCanvas.width, newCanvas.height);
+    const data = spriteData.data;
+    const color = sprite.color.map(c => Math.round(c * 255));
 
-    newContext.globalCompositeOperation = "source-in";
-    newContext.setTransform(new Canvas.DOMMatrix([1, 0, 0, 1, 0, 0]));
-    newContext.fillStyle = "rgb(" + color + ")";
-    newContext.fillRect(0, 0, newCanvas.width, newCanvas.height);
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const a = data[i + 3];
+      
+      if (a > 0) {
+        data[i] = Math.min(255, r * color[0] / 255);
+        data[i + 1] = Math.min(255, g * color[1] / 255);
+        data[i + 2] = Math.min(255, b * color[2] / 255);
+      }
+    }
 
-    this.overlayCanvas(newCanvas, targetContext, "multiply")
+    newContext.putImageData(spriteData, 0, 0);
+
+    this.overlayCanvas(newCanvas, targetContext, 'source-over');
+
+    // const color = sprite.color.map(c => Math.round(c*255)).join(", ");
+
+    // newContext.globalCompositeOperation = "source-in";
+    // newContext.setTransform(new Canvas.DOMMatrix([1, 0, 0, 1, 0, 0]));
+    // newContext.fillStyle = "rgb(" + color + ")";
+    // newContext.fillRect(0, 0, newCanvas.width, newCanvas.height);
+
+    // this.overlayCanvas(newCanvas, targetContext, "multiply")
   }
 
   overlayCanvas(sourceCanvas: Canvas.Canvas, targetContext: Canvas.CanvasRenderingContext2D, operation: Canvas.GlobalCompositeOperation): void {
